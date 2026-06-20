@@ -1,0 +1,84 @@
+name: JAVIS Android APK Build
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    name: Build JAVIS APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: '10'
+
+      - name: Install Dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install EAS CLI
+        run: npm install -g @expo/eas-cli
+
+      - name: Expo Prebuild (Android)
+        working-directory: artifacts/javis
+        run: npx expo prebuild --platform android --no-install --clean
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            artifacts/javis/android/.gradle
+          key: gradle-${{ hashFiles('artifacts/javis/android/**/*.gradle*') }}
+          restore-keys: gradle-
+
+      - name: Grant Gradle Permissions
+        working-directory: artifacts/javis/android
+        run: chmod +x gradlew
+
+      - name: Build Debug APK
+        working-directory: artifacts/javis/android
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: JAVIS-Launcher-OS-V06-debug
+          path: artifacts/javis/android/app/build/outputs/apk/debug/*.apk
+          retention-days: 30
+
+      - name: Build Summary
+        if: success()
+        run: |
+          echo "## JAVIS APK Build Successful" >> $GITHUB_STEP_SUMMARY
+          echo "APK is available in the Artifacts section above." >> $GITHUB_STEP_SUMMARY
+          echo "Download and install on your Redmi A1 (Android 12 Go)." >> $GITHUB_STEP_SUMMARY
+
+      - name: Scan for Errors on Failure
+        if: failure()
+        run: |
+          echo "## Build Failed - Error Scan" >> $GITHUB_STEP_SUMMARY
+          echo "### Gradle Errors:" >> $GITHUB_STEP_SUMMARY
+          find artifacts/javis/android -name "*.txt" -path "*/build/reports/*" -exec cat {} \; 2>/dev/null | head -100 >> $GITHUB_STEP_SUMMARY || true
