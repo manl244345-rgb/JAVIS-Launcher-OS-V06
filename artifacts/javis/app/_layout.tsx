@@ -19,6 +19,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { AlarmProvider } from "@/contexts/AlarmContext";
 import { MemoryProvider } from "@/contexts/MemoryContext";
 import { AIProvider } from "@/contexts/AIContext";
 import { VoiceProvider } from "@/contexts/VoiceContext";
@@ -33,12 +34,15 @@ function RootLayoutNav() {
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: "#000000" },
+        animation: "slide_from_right",
       }}
     >
       <Stack.Screen name="index" options={{ animation: "none" }} />
       <Stack.Screen name="settings" options={{ animation: "slide_from_bottom" }} />
       <Stack.Screen name="image-studio" options={{ animation: "slide_from_bottom" }} />
       <Stack.Screen name="video-studio" options={{ animation: "slide_from_bottom" }} />
+      <Stack.Screen name="contacts" options={{ animation: "slide_from_right" }} />
+      <Stack.Screen name="alarms" options={{ animation: "slide_from_right" }} />
       <Stack.Screen name="+not-found" />
     </Stack>
   );
@@ -71,11 +75,13 @@ export default function RootLayout() {
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
               <MemoryProvider>
-                <AIProvider>
-                  <VoiceProvider>
-                    <RootLayoutNav />
-                  </VoiceProvider>
-                </AIProvider>
+                <AlarmProvider>
+                  <AIProvider>
+                    <VoiceProvider>
+                      <RootLayoutNav />
+                    </VoiceProvider>
+                  </AIProvider>
+                </AlarmProvider>
               </MemoryProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
